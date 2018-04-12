@@ -31,7 +31,7 @@ main() {
   SHW_ADR("buffer1", buffer1);
   SHW_ADR("i", i);
   strcpy(buffer1, "A demonstration\n");   /* Library function */
-  write(1, buffer1, strlen(buffer1) + 1); /* System call */
+  (1, buffer1, strlen(buffer1) + 1); /* System call */
   showit(cptr);
 
 } /* end of main function */

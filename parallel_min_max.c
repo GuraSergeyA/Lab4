@@ -18,7 +18,7 @@
 
 void sighandler(int signum) {
    printf("Caught signal %d, coming out...\n", signum);
-   raise(SIGKILL);
+   kill(0, SIGKILL);
 }
 
 int main(int argc, char **argv) {
@@ -74,9 +74,10 @@ int main(int argc, char **argv) {
             with_files = true;
             break;
           case 4:
-            timeout = atoi(optarg); 
-            if (signal(SIGINT, sighandler) == SIG_ERR)
-            printf("\ncan't catch SIGINT\n");
+            timeout = atoi(optarg);
+            if (signal(SIGALRM, sighandler) == SIG_ERR)
+                printf("\ncan't catch SIGINT\n");
+            alarm(timeout);
             
             if (timeout <= 0)
             {
@@ -135,15 +136,17 @@ int main(int argc, char **argv) {
 
   struct timeval start_time;
   gettimeofday(&start_time, NULL);
-  int child_pid[pnum];
+  //int child_pid[pnum];
 
   for (int i = 0; i < pnum; i++) {
-    child_pid[i] = fork();
+    pid_t child_pid = fork();
     if (child_pid >= 0) {
       // successful fork
       active_child_processes += 1;
       if (child_pid == 0) {                         
         // child process
+        //if (signal(SIGALRM, sighandler) == SIG_ERR)
+        //    printf("\ncan't catch SIGINT\n");
         
         struct MinMax min_max;
         // parallel somehow
@@ -181,8 +184,9 @@ int main(int argc, char **argv) {
         
         if (timeout != -1)
         {
-            wait(NULL);
+            while(true) {}
         }
+        
         return 0;
       }
 
@@ -192,16 +196,15 @@ int main(int argc, char **argv) {
     }
   }
 
-  int index = 0;
+  //sleep(timeout);
+  //printf("sending signal...\n", index);
+  //kill(0, SIGINT);
   while (active_child_processes > 0) {
         if (timeout == -1) {
             wait(NULL); // blocks parent process until any of its children has finished
         }
         else {
-            printf("send signal to %d\n", child_pid[index]);
-            kill(child_pid[index], SIGINT);
-            waitpid(child_pid[index], NULL, WNOHANG);
-            ++index;
+            waitpid(0, NULL, WNOHANG);
         }
 
         active_child_processes -= 1;
@@ -252,5 +255,11 @@ int main(int argc, char **argv) {
   printf("Max: %d\n", min_max.max);
   printf("Elapsed time: %fms\n", elapsed_time);
   fflush(NULL);
+  
+  if (timeout != -1)
+  {
+    while(true) {}
+  }
+  
   return 0;
 }
